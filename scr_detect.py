@@ -1,5 +1,5 @@
 """
-scr_detect.py
+src/scr_detect.py
 -------------
 SCR 事件检测与分段指标提取。
 
