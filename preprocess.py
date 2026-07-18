@@ -1,5 +1,5 @@
 """
-preprocess.py
+src/preprocess.py
 -------------
 EDA 信号预处理: 低通滤波 + 运动伪迹检测与处理。
 
