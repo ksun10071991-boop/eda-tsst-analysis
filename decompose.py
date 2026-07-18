@@ -1,5 +1,5 @@
 """
-decompose.py
+src/decompose.py
 ------------
 将 EDA 分解为紧张性成分 (SCL, tonic) 与相位性成分 (SCR, phasic)。
 
