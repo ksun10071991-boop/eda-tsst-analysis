@@ -1,0 +1,89 @@
+# ============================================================
+# EDA/TSST-C 分析配置文件
+# 修改这里即可，不需要改代码
+# ============================================================
+
+acquisition:
+  # BIOPAC 原始采样率 (Hz)。常见: 1000, 2000
+  original_sampling_rate: 1000
+
+  # 降采样目标 (Hz)。EDA 是慢变信号，50Hz 足够，大幅加快处理
+  target_sampling_rate: 50
+
+  # .acq 文件中 EDA 通道的名称或索引
+  # 用 index (从0开始) 或 name。留 null 则自动搜索含关键词的通道
+  eda_channel_name: null        # 例: "EDA100C" / "GSR"
+  eda_channel_index: null       # 例: 0
+  eda_channel_keywords: ["eda", "gsr", "skin", "皮电"]
+
+  # 单位。BIOPAC 通常是 microsiemens (μS)
+  unit: "microsiemens"
+
+preprocessing:
+  # 低通滤波截止频率 (Hz)。EDA 有效成分 < 5Hz，标准做法 1-3Hz
+  lowpass_cutoff: 3.0
+  filter_order: 4
+
+  # ---- 运动伪迹检测 (自适应阈值) ----
+  # 阈值 = p99.5(一阶差分) * multiplier，对个体差异自适应。
+  # 不用固定阈值: 真实 SCR 上升速率可达 6 μS/s，固定 2 μS/s 会把所有
+  # 正常 SCR 波峰误判为伪迹 (实测已验证)。
+  # 也不用 median+MAD: EDA 差分分布高度右偏，MAD 被压到接近 0，
+  # 反而在 SCR 密集段误检更多 (实测 14% vs 真伪迹 5%)。
+  # multiplier 越小越严格。
+  artifact_percentile: 99.5
+  artifact_percentile_multiplier: 3.0
+
+  # 绝对速率上限 (μS/s)。超过此值生理上不可能是 SCR，一定是伪迹。
+  artifact_absolute_ceiling_us_per_sec: 15.0
+
+  # 伪迹处理方式: "interpolate"(线性插值) 或 "nan"(标记为缺失)
+  artifact_handling: "interpolate"
+
+decomposition:
+  # SCL/SCR 分解方法 (NeuroKit2)
+  # 可选: "cvxEDA"(推荐,最准) / "highpass"(最快) / "smoothmedian"
+  method: "cvxEDA"
+
+scr_detection:
+  # SCR 峰值检测方法: "neurokit" / "gamboa2008" / "kim2004"
+  method: "neurokit"
+
+  # 最小 SCR 幅值阈值 (μS)。文献常用 0.01-0.05
+  # 注意: 0.01 会严重过检 (合成数据上约 3-4 倍假阳性)。
+  # 在已知真值的合成信号上标定后，0.04 误差最小 (7.7%)，且 0.04-0.10 区间表现稳定。
+  # 真实数据信噪比不同，建议先跑 tools/calibrate_threshold.py 复标定。
+  amplitude_min: 0.04
+
+epochs:
+  # ============================================================
+  # 实验分段: baseline (基线) vs stress (TSST-C后)
+  # 单位: 秒，相对于记录开始时刻
+  # 如果每个被试时间不同，用 data/epochs.csv 覆盖(见 README)
+  # ============================================================
+  baseline:
+    start: 0
+    end: 300        # 5分钟基线
+  stress:
+    start: 300
+    end: 600        # TSST-C 期间/之后 5分钟
+
+statistics:
+  # 配对检验: 先做正态性检验，自动选择 t 检验或 Wilcoxon
+  normality_alpha: 0.05
+  test_alpha: 0.05
+
+  # 需要统计的指标
+  metrics:
+    - "SCL_mean"          # 平均皮电水平
+    - "SCL_slope"         # 皮电水平变化趋势
+    - "SCR_count"         # SCR 事件数
+    - "SCR_rate_per_min"  # 每分钟 SCR 频次 (NS-SCR)
+    - "SCR_amplitude_mean"
+    - "SCR_amplitude_sum"
+    - "EDA_std"
+
+output:
+  results_dir: "results"
+  save_figures: true
+  figure_dpi: 150
