@@ -1,5 +1,5 @@
 """
-load_acq.py
+src/load_acq.py
 -----------
 读取 BIOPAC AcqKnowledge (.acq) 原始文件，定位 EDA 通道并降采样。
 
