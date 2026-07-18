@@ -1,0 +1,5 @@
+subject,epoch,start,end
+S01,baseline,0,300
+S01,stress,300,600
+S02,baseline,0,300
+S02,stress,300,600
